@@ -1,0 +1,25 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Private or large sensor captures; publish only deliberate, consented samples
+data/
+captures/
+recordings/
+*.bag
+*.db3
+*.mcap
+*.mp4
+*.mov
+
+# Generated files
+__pycache__/
+.venv/
+node_modules/
+dist/
+build/
+.DS_Store
+Thumbs.db
