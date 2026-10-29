@@ -1,0 +1,20 @@
+{
+  "url": "https://vams2krish.github.io/CV-ML-SpatialSync/",
+  "checkedAt": "2026-10-29T08:55:15.562Z",
+  "environment": "Headless Chromium with simulated camera; public GitHub Pages production frontend",
+  "status": "passed",
+  "checks": [
+    "HTTPS production page, bundled assets and 3D viewer loaded",
+    "Synthetic metric landmarks aligned with near-zero residual",
+    "PLY map download validated",
+    "Synthetic posed-depth file imported and reconstructed",
+    "Simulated browser camera captured frames and replayed over HTTPS"
+  ],
+  "browserErrors": [],
+  "failedRequests": [],
+  "limits": [
+    "No physical camera or LiDAR tested",
+    "No RGB-only SLAM implemented",
+    "Hosted coordinator not provided; two-client sync tested separately against local coordinator"
+  ]
+}

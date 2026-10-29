@@ -65,6 +65,12 @@ These are screenshots of the running application, captured by the reproducible b
 
 The mobile screenshot is a browser viewport check; physical phone sensors and performance have not been validated.
 
+### 6. Live HTTPS deployment
+
+![Public GitHub Pages production demo after aligning the synthetic studio map](docs/images/06-live-demo.png)
+
+Captured from the [public live demo](https://vams2krish.github.io/CV-ML-SpatialSync/), not the local development server. The [machine-readable live verification record](docs/live-verification.json) records the tested URL, time, checks, and limitations.
+
 ## Project classification: ML or DL?
 
 **Primary category: Computer Vision / Robotics (SLAM). Optional category: Machine Learning, including Deep Learning.** SLAM means simultaneous localization and mapping. A geometric baseline can use feature matching, triangulation, optimization, and sensor fusion without training a neural network. LiDAR is a sensing technology, not an ML model.
@@ -215,6 +221,16 @@ npm run test:e2e
 ```
 
 The browser suite builds and serves the **production bundle** at port 5198 and launches the coordinator at 8787; keep those ports free. It tests viewer alignment, layer visibility and PLY download; simulated camera recording, export/import and replay; invalid cloud rejection and posed-depth import; two-client publish/reconnect; mobile overflow; and camera denial. It regenerates the five README screenshots. Camera hardware and native sensor APIs are not exercised. Fonts are bundled locally; no external font service is required.
+
+**Verified for this implementation:** six numerical / coordinator integration tests and five production-build browser scenarios passed locally. The public HTTPS smoke test also passed with no browser exceptions or failed requests; it exercised loading the viewer, landmark alignment, PLY download, posed-depth import, and simulated camera capture/replay. These are functional prototype checks, not proof of production readiness or real-world SLAM accuracy.
+
+To repeat the public deployment check and regenerate its screenshot / JSON record:
+
+```sh
+node scripts/live-smoke.js
+```
+
+GitHub Actions runs [prototype verification](https://github.com/vams2krish/CV-ML-SpatialSync/actions/workflows/ci.yml) and [Pages deployment](https://github.com/vams2krish/CV-ML-SpatialSync/actions/workflows/pages.yml) on pushes to main. The live site is a production frontend build of this **research prototype**; a hosted multi-user backend, production authorization, physical-device validation, and a full SLAM pipeline remain future work.
 
 ### Current synchronization limits
 
