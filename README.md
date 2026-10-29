@@ -8,7 +8,62 @@
 
 SpatialSync is a proposed collaborative mapping system that combines observations from two or more mobile or web cameras into a shared 3D representation of an environment. Each participant estimates their camera motion and builds a local map; overlapping observations establish a common coordinate frame, allowing participants to view the same reconstructed scene, camera poses, and spatial annotations.
 
-> **Status: concept and architecture documentation.** This repository currently contains a project proposal and original concept illustration. Camera capture, SLAM, map merging, networking, trained models, and an executable application are not implemented. The illustration is not a product screenshot or measured reconstruction.
+> **Status: working research prototype v0.1.** Browser RGB sampling/replay, a 3D point-cloud viewer, posed-depth reconstruction, landmark-based rigid alignment, PLY export, and a local shared-map coordinator are implemented. RGB-only SLAM, automatic feature correspondence, native LiDAR capture, continuous pose streaming, shared AR anchors, and trained models remain planned. The initial scene is a clearly labeled synthetic fixture.
+
+## Run the prototype
+
+**[Open the live HTTPS demo](https://vams2krish.github.io/CV-ML-SpatialSync/)**
+
+The public demo serves the production frontend build through GitHub Pages. Viewer, alignment, posed-depth import, RGB capture/replay, and PLY export run in the browser. The optional coordinator still runs locally; the public demo does not provide a hosted shared-session backend. Use the local app for the two-client session workflow.
+
+Requires **Node.js 22.12+** (Node.js 24 used for validation) and a browser with WebGL.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open the localhost URL printed by Vite. In a second terminal, start the optional map coordinator:
+
+```sh
+npm run sync
+```
+
+Camera access requires localhost or HTTPS and explicit browser permission. The development servers bind to loopback. A phone opening your computer's HTTP LAN address will not automatically have camera access; a trusted HTTPS setup and a deliberate network configuration are needed for physical multi-device testing. The current shared-session smoke test uses two local browser clients.
+
+### Try the working flows
+
+1. **Overview:** orbit the synthetic studio point clouds, toggle layers, use Top / Fit, and export visible points as ASCII PLY.
+2. **Align & merge:** select **Align B to A**. The fixture has four exact landmark pairs; the algorithm estimates a rigid transform and reports landmark RMSE. Import your own metric A/B JSON clouds with paired `landmarks` to use other data.
+3. **Capture & replay:** start the camera, stop recording, scrub or replay frames, and save / reopen the RGB JSON recording. Frames stay in browser memory until downloaded. No camera data is sent to the coordinator.
+4. **Posed depth:** import `examples/posed-depth.json` in Align & merge. This synthetic fixture exercises depth unprojection and voxel filtering with known camera-to-world poses. It does not estimate camera motion.
+5. **Shared session:** run the coordinator, generate a session key, and connect. Open a second browser tab at the app URL, paste the same key, and connect. Publishing sends the visible voxel-filtered cloud to both clients and advances the map revision. Reconnecting receives the current snapshot.
+
+## Product showcases
+
+These are screenshots of the running application, captured by the reproducible browser tests. The studio clouds are **synthetic test geometry**, not evidence of real-world SLAM accuracy. The capture showcase uses **Chromium's simulated test camera**, not a recorded physical environment.
+
+### 1. Mapping workspace
+
+![Running overview with synthetic point-cloud layers and interactive 3D controls](docs/images/01-workspace.png)
+
+### 2. Landmark alignment
+
+![Running alignment workspace with an accepted fit on exact synthetic landmark pairs](docs/images/02-alignment.png)
+
+### 3. Camera capture and replay
+
+![Running RGB frame replay using the simulated browser test camera](docs/images/03-capture-replay.png)
+
+### 4. Shared map session
+
+![Running shared-session workspace after a synthetic map snapshot is synchronized](docs/images/04-shared-session.png)
+
+### 5. Responsive mobile layout
+
+![Running workspace at a 390-pixel mobile viewport with synthetic geometry](docs/images/05-mobile.png)
+
+The mobile screenshot is a browser viewport check; physical phone sensors and performance have not been validated.
 
 ## Project classification: ML or DL?
 
@@ -22,7 +77,7 @@ SpatialSync is a proposed collaborative mapping system that combines observation
 | Semantic segmentation | Optional DL | Label surfaces and mask moving objects |
 | Live map synchronization | Distributed systems | Share map revisions, poses, and annotations |
 
-This is **not inherently a generative AI project**. The repository name `CV-ML-SpatialSync` communicates the core field and planned ML extensions without claiming that a deep learning model already exists.
+This is **not inherently a generative AI project**. The current implementation uses geometric computer vision and distributed systems without a trained model. The repository name `CV-ML-SpatialSync` communicates the core field and planned ML extensions without claiming that a deep learning model already exists.
 
 ## Vision and inspiration
 
@@ -96,7 +151,7 @@ Use a session coordinator as the initial authority for shared map revisions. Est
 
 ## Implementation options to evaluate
 
-These are candidates, not installed dependencies or completed integrations:
+The implemented prototype uses vanilla JavaScript, Vite, Three.js, ml-matrix (SVD), and a Node.js / WebSocket coordinator. The following remain future integration candidates:
 
 - **Capture:** native mobile capture for depth and sensor timestamps; browser RGB capture for a constrained camera-only mode.
 - **Local SLAM:** evaluate a visual / visual-inertial backend against required platforms and licensing. ORB-SLAM3 is one research baseline; its multi-map capability is not a ready-made distributed collaboration service.
@@ -109,16 +164,16 @@ Third-party code, model weights, datasets, and mobile SDKs retain their own lice
 
 ## Phased roadmap and acceptance criteria
 
-| Phase | Deliverable | Evidence required |
+| Phase | Implemented in v0.1 | Remaining acceptance work |
 | --- | --- | --- |
-| 1. Single capture | Timestamped RGB / optional depth recording and replay | Calibration metadata and a reproducible capture |
-| 2. Local reconstruction | One device produces a map and trajectory | Reconstruction and trajectory evaluation on reference data |
-| 3. Offline two-user merge | Align overlapping recordings | Report alignment error and rejected non-overlap cases |
-| 4. Live session | Two users exchange poses and map deltas | Both viewers converge on the same revision after reconnect |
-| 5. Shared AR | Stable common annotations | Measure anchor drift after loop closure and relocalization |
-| 6. Optional DL | Depth / semantic enhancement | Ablation against baseline with runtime and accuracy costs |
+| 1. Single capture | Local sampled RGB frames, relative sampling timestamps, optional manual intrinsics, save/import/replay | Native sensor exposure timestamps, calibration procedure, IMU and measured depth capture |
+| 2. Local reconstruction | Depth unprojection from supplied poses, voxel centroids, 3D viewer, PLY export | Actual visual / visual-inertial SLAM and real reference-trajectory evaluation |
+| 3. Offline two-user merge | SE(3) Kabsch alignment from paired metric landmarks, residual threshold and degeneracy rejection | Automatic matching, outlier-robust estimation, Sim(3), ICP refinement and real overlap evaluation |
+| 4. Live session | Two-browser full-map snapshot synchronization, monotonic revisions, stale-write rejection and reconnect recovery | Pose streaming, compressed submap deltas, clock offset estimation, persistence and production authentication |
+| 5. Shared AR | Not implemented | Native rendering and revision-aware anchors with measured drift |
+| 6. Optional DL | Not implemented | Model selection, baselines, accuracy / runtime evaluation |
 
-Start with a static, textured indoor room, overlapping scans, and two calibrated devices on a local network. Establish offline merging before attempting live dense fusion. No latency, accuracy, or device-coverage results have been measured yet.
+The numerical tests verify known synthetic transformations, depth unprojection, failure rejection, voxel centroids, and snapshot convergence. They do not establish real-world reconstruction accuracy. No real-scene SLAM, end-to-end latency, physical phone, or LiDAR results have been measured yet.
 
 ## Evaluation plan
 
@@ -133,12 +188,41 @@ SLAM can drift or lose tracking. Incorrect loop closures can corrupt a map. Mono
 ## Repository contents and getting started
 
 ```text
-README.md                              Project proposal and technical plan
-docs/images/spatialsync-concept.svg     Original illustrative project artwork
-.gitignore                             Excludes secrets and raw capture data
+src/main.js                 Workspace UI, imports, replay and session client
+src/viewer.js               Three.js point-cloud viewer and orbit controls
+src/capture.js              Local sampled RGB capture and recording validation
+src/geometry.js             Depth unprojection, Kabsch registration, voxel fusion, PLY
+src/demo.js                 Deterministic synthetic studio fixture
+server/sync.js              Bounded in-memory development coordinator
+examples/                   Synthetic importable geometry fixtures
+test/                       Numerical and WebSocket integration tests
+e2e/                        Browser flows and README screenshot generation
+docs/images/                Product screenshots and concept artwork
+.github/workflows/ci.yml     CI unit, integration, build and browser checks
 ```
 
-There is no application to install or run yet. To begin implementation, first agree on a capture platform, sensor availability, and reference dataset; then implement Phase 1 and retain a reproducible offline baseline. Contributions should state assumptions, include reproducible evidence, and distinguish planned capabilities from demonstrated ones.
+### Import formats and coordinate conventions
+
+See [the data format guide](docs/data-formats.md) for complete schemas, limits, depth conventions, timestamps, and calibration expectations. The viewer uses a right-handed world with +Y up. Input point clouds must share metric scale; the alignment solver does not resolve monocular scale. Depth uses camera +X right, +Y down, +Z forward, transformed by a row-major `cameraToWorld` rigid matrix.
+
+### Verification
+
+```sh
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+The browser suite builds and serves the **production bundle** at port 5198 and launches the coordinator at 8787; keep those ports free. It tests viewer alignment, layer visibility and PLY download; simulated camera recording, export/import and replay; invalid cloud rejection and posed-depth import; two-client publish/reconnect; mobile overflow; and camera denial. It regenerates the five README screenshots. Camera hardware and native sensor APIs are not exercised. Fonts are bundled locally; no external font service is required.
+
+### Current synchronization limits
+
+The coordinator is a **local development service**, not a hosted collaboration backend. Session keys are random 128-bit values; anyone who knows a key and can access the coordinator can replace that session's map. Browser origins are restricted to localhost / loopback. There are no user identities, durable storage, encrypted `ws://` transport, or per-user access policies. A publish replaces the full shared map, rather than automatically fusing peer observations. Stale writes are rejected and the current snapshot is restored; keep an exported copy of your local work before publishing. Empty sessions expire after ten minutes; a process restart clears all maps.
+
+The prototype intentionally limits RGB capture to 180 JPEG samples (roughly 90 seconds at 2 fps), JSON imports to 30 MB, point clouds to 100,000 finite metric points, and depth imports to 100 frames / one million unprojected samples. These limits keep browser and coordinator memory bounded. Captures have browser sampling timestamps, not hardware frame exposure timestamps; they are not yet a tightly synchronized SLAM dataset.
+
+Contributions should state assumptions, include reproducible evidence, and distinguish planned capabilities from demonstrated ones.
 
 ## Technical references
 
